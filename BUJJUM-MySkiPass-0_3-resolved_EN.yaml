@@ -1,0 +1,517 @@
+openapi: 3.0.0
+info:
+  title: Ski Pass Management API
+  description: API for managing ski passes at a ski resort.
+  version: "0.3"
+servers:
+- url: https://virtserver.swaggerhub.com/BUJJUM/MySkiPass/0.3
+  description: SwaggerHub API Auto Mocking
+paths:
+  /skiPasses:
+    get:
+      tags:
+      - SkiPasses
+      summary: Getting a list of the user's ski passes
+      responses:
+        "200":
+description: List of ski passes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SkiPass'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - SkiPasses
+      summary: Adding a new ski pass by number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddSkiPassRequest'
+        required: true
+      responses:
+        "201":
+description: Ski pass successfully added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddSkiPassResponse'
+        "400":
+          description: Validation Error
+  /skiPasses/{skiPassID}/block:
+    patch:
+      tags:
+      - SkiPasses
+      summary: Blocking the ski pass
+      parameters:
+      - name: skiPassID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+description: Ski pass is blocked
+        "404":
+description: Ski pass not found
+      security:
+      - bearerAuth: []
+  /auth/register:
+    post:
+      tags:
+      - Authentication
+      summary: Registration of a new user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+        required: true
+      responses:
+        "201":
+description: Successful registration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterRequestOk'
+        "400":
+description: Validation error
+  /auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: User authorization
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      responses:
+        "200":
+description: Authorization is successful
+        "401":
+description: Invalid phone number or code
+/skiPasses/{skiPassID}/transactions:
+    get:
+      tags:
+      - Transactions
+      summary: Getting the transaction history for the ski pass
+      parameters:
+      - name: skiPassID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: startDate
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          description: Start date of the period (inclusive)
+format: date
+      - name: endDate
+        in: query
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+          description: The end date of the period (inclusive)
+format: date
+      - name: cursor
+        in: query
+        description: Cursor location of the current set of operations
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: limit
+        in: query
+        description: The number of operations in the response set
+        required: false
+        style: form
+        explode: true
+        schema:
+          minimum: 1
+          type: integer
+          default: 10
+      responses:
+        "200":
+description: Transaction history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        "404":
+description: Ski pass not found
+      security:
+      - bearerAuth: []
+  /skiPasses/{skiPassID}/top-up:
+    post:
+      tags:
+      - Transactions
+      summary: Replenishment of the ski pass balance
+      parameters:
+      - name: skiPassID
+        in: path
+        description: "ID of the ski pass that needs to be replenished"
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopUpRequest'
+        required: true
+      responses:
+        "200":
+          description: Successful replenishment of the balance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopUpResponse'
+        "400":
+description: "Request validation error (for example, the deposit amount is invalid)"
+        "402":
+description: Payment error (the bank rejected the transaction)
+        "404":
+description: Ski pass not found
+        "500":
+description: Problem with communication with the ski pass management system
+  /tariffs:
+    get:
+      tags:
+      - Tariffs
+      summary: Getting a list of available fares
+      responses:
+        "200":
+description: List of tariffs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tariff'
+  /tariffs/{tariffID}/details:
+    get:
+      tags:
+      - Tariffs
+      summary: Getting detailed information about the tariff
+      parameters:
+      - name: tariffID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+description: Detailed information about the tariff
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TariffDetails'
+        "404":
+description: Tariff not found
+/orders:
+    post:
+      tags:
+      - Orders
+      summary: Purchase of a ski pass fare
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+        required: true
+      responses:
+        "201":
+description: The order has been successfully created
+      security:
+      - bearerAuth: []
+  /orders/{orderID}/qrcode:
+    get:
+      tags:
+      - Orders
+      summary: Receiving a QR code to complete the order
+      parameters:
+      - name: orderID
+        in: path
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+description: QR code successfully received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/inline_response_200'
+      security:
+      - bearerAuth: []
+  /addServices:
+    get:
+      tags:
+      - AddServices
+      summary: Getting a list of available additional services
+      responses:
+        "200":
+description: List of additional services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AddService'
+  /skiPasses/{skiPassID}/services-add:
+    post:
+      tags:
+      - AddServices
+      summary: Connecting an additional service to the ski pass
+      parameters:
+      - name: skiPassID
+        in: path
+        description: Ski Pass ID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddServiceRequest'
+        required: true
+      responses:
+        "200":
+description: The service has been connected successfully
+        "404":
+description: The ski pass was not found or the service is not available
+      security:
+      - bearerAuth: []
+components:
+  schemas:
+    SkiPass:
+      type: object
+      properties:
+        skiPassID:
+          type: string
+          description: The unique identifier of the ski pass
+        skiName:
+          type: string
+          description: The name of the ski pass
+        balance:
+          type: number
+          description: Ski Pass Balance
+        status:
+          type: string
+          description: "Ski pass status (active, blocked, etc."
+enum:
+- active
+          - blocked
+        tariffID:
+          type: string
+          description: "ID of the tariff linked to the ski pass"
+    AddSkiPassRequest:
+      type: object
+      properties:
+        skiPassID:
+          type: string
+          description: The unique identifier of the ski pass
+          example: "123456789"
+        receiptNumber:
+          type: string
+          description: Cash Receipt Number
+    AddSkiPassResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the created ski pass
+        number:
+          type: string
+          description: "The number of the ski pass added by the user"
+status:
+          type: string
+          description: Status of the new ski pass
+          enum:
+          - active
+          - blocked
+          - pending
+        balance:
+          type: number
+          description: The initial balance of the ski pass
+        createdAt:
+          type: string
+          description: Date and time of creation of the ski pass
+          format: date-time
+        tariffID:
+          type: string
+          description: "The current tariff linked to the ski pass"
+    RegisterRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+    RegisterRequestOk:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+        userID:
+          type: string
+        name:
+          type: string
+    LoginRequest:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+        password:
+          type: string
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: integer
+        date:
+          type: string
+          format: date-time
+        operationType:
+          type: string
+          enum:
+          - earned
+          - spent
+    TopUpRequest:
+      type: object
+      properties:
+        amount:
+          type: integer
+          description: The amount to replenish the balance
+          example: 500
+        paymentMethod:
+          type: string
+          description: "Payment method (linked card, new card or SBP)"
+enum:
+- card
+          - newCard
+          - sbp
+        cardID:
+          type: string
+          description: "The unique identifier of the linked card (used if the payment method \"card\" is selected)"
+example: card12345
+    TopUpResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Replenishment status
+          enum:
+          - success
+          - failure
+        balance:
+          type: integer
+          description: New Ski Pass balance
+        message:
+          type: string
+          description: Message with the result
+of the Tariff operation:
+      type: object
+      properties:
+        TariffID:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: integer
+    TariffDetails:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique tariff identifier
+        name:
+          type: string
+          description: Name of the tariff
+        description:
+          type: string
+          description: Description of the tariff
+        price:
+          type: number
+          description: The price of the tariff
+        conditions:
+          type: string
+          description: Terms of use of the tariff
+    OrderRequest:
+      type: object
+      properties:
+        tariffID:
+          type: string
+        paymentMethod:
+          type: string
+          description: Payment method
+    AddService:
+      type: object
+      properties:
+        addServiceID:
+          type: string
+        addServiceName:
+          type: string
+        price:
+          type: integer
+    AddServiceRequest:
+      type: object
+      properties:
+        addServiceID:
+          type: string
+        count:
+          type: integer
+        amount:
+          type: integer
+    inline_response_200:
+      type: object
+      properties:
+        qrCode:
+          type: string
+          description: QR code for linking a physical ski pass
+          format: byte
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
